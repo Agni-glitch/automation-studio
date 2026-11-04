@@ -6,6 +6,8 @@ All notable changes to Automation Studio. The format follows
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-04
+
 ### Added
 - Hands-on labs in `docs/labs`: twelve step-by-step exercises, from a first run to an
   unattended AI digest, covering every trigger and node.
@@ -60,7 +62,8 @@ First release.
 - `studio` command line.
 - Per-user installer.
 
-[Unreleased]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Agni-glitch/automation-studio/releases/tag/v0.2.0

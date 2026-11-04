@@ -1,4 +1,4 @@
 """Studio service: HTTP/WebSocket API for the GUI, trigger hosting, tunnel and autostart."""
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 APP_NAME = "Automation Studio"
