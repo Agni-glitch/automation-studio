@@ -1,0 +1,58 @@
+{
+  "id": "cv-inbox",
+  "name": "CV inbox analyser",
+  "description": "Drop a CV (.txt/.md) into the inbox folder; an AI profile is written next to it as <name>.analysis.json. Needs an 'anthropic' credential and the folder to exist.",
+  "variables": { "inbox": "%USERPROFILE%\\Documents\\CV Inbox" },
+  "nodes": [
+    {
+      "id": "inbox",
+      "type": "trigger.file",
+      "parameters": { "directory": "{{ vars.inbox }}", "patterns": ["*.txt", "*.md"], "events": ["created"], "settle_seconds": 1 }
+    },
+    {
+      "id": "read",
+      "type": "code.python",
+      "parameters": {
+        "code": "from pathlib import Path\n\ndef main(input):\n    p = Path(input['path'])\n    text = p.read_text(encoding='utf-8', errors='replace')\n    print(f'read {len(text)} chars from {p.name}')\n    return {'path': str(p), 'name': p.name, 'stem': p.stem, 'text': text[:20000]}\n"
+      }
+    },
+    {
+      "id": "analyze",
+      "type": "ai.agent",
+      "credentials": { "default": "anthropic" },
+      "retry": { "max_attempts": 2, "backoff_seconds": 3 },
+      "parameters": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "system_prompt": "You extract accurate, concise candidate profiles from CVs. Never invent facts that are not in the CV.",
+        "prompt": "Extract a structured profile from this CV.",
+        "input_data": "{{ input.text }}",
+        "output_schema": {
+          "type": "object",
+          "required": ["name", "seniority", "years_experience", "skills", "summary", "suggested_roles"],
+          "properties": {
+            "name": { "type": "string" },
+            "seniority": { "type": "string", "enum": ["junior", "mid", "senior", "lead"] },
+            "years_experience": { "type": "number" },
+            "skills": { "type": "array", "items": { "type": "string" } },
+            "summary": { "type": "string" },
+            "suggested_roles": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    {
+      "id": "save",
+      "type": "code.python",
+      "parameters": {
+        "arguments": { "source": "{{ nodes.read.path }}" },
+        "code": "import json\nfrom pathlib import Path\n\ndef main(input):\n    src = Path(args['source'])\n    out = src.with_name(src.stem + '.analysis.json')\n    out.write_text(json.dumps(input['result'], indent=2, ensure_ascii=False), encoding='utf-8')\n    print(f'wrote {out.name}')\n    return {'written': str(out), 'profile': input['result']}\n"
+      }
+    }
+  ],
+  "connections": [
+    { "source": "inbox", "target": "read" },
+    { "source": "read", "target": "analyze" },
+    { "source": "analyze", "target": "save" }
+  ]
+}

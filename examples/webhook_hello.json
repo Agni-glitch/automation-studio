@@ -1,0 +1,32 @@
+{
+  "id": "webhook-hello",
+  "name": "Webhook hello",
+  "description": "POST {\"name\": \"Ada\"} to http://127.0.0.1:5678/webhook/hello and get a greeting back.",
+  "nodes": [
+    {
+      "id": "hook",
+      "type": "trigger.webhook",
+      "parameters": { "path": "hello", "method": "POST", "response_mode": "wait", "sample_data": { "body": { "name": "manual run" } } }
+    },
+    {
+      "id": "has_name",
+      "type": "logic.if",
+      "parameters": { "left": "{{ input.body.name ?? \"\" }}", "operator": "is_not_empty" }
+    },
+    {
+      "id": "greet",
+      "type": "logic.set",
+      "parameters": { "values": { "message": "Hello {{ nodes.hook.body.name }}!", "execution": "{{ execution.id }}" } }
+    },
+    {
+      "id": "ask",
+      "type": "logic.set",
+      "parameters": { "values": { "message": "Send JSON like {\"name\": \"Ada\"}" } }
+    }
+  ],
+  "connections": [
+    { "source": "hook", "target": "has_name" },
+    { "source": "has_name", "target": "greet", "source_output": "true" },
+    { "source": "has_name", "target": "ask", "source_output": "false" }
+  ]
+}

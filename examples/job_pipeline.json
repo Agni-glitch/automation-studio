@@ -1,0 +1,117 @@
+{
+  "id": "job-pipeline",
+  "name": "Job match pipeline",
+  "description": "Fetch remote jobs -> clean them up -> AI compares them to a CV -> email the best matches.",
+  "variables": {
+    "min_score": 60,
+    "recipient": "you@example.com",
+    "dry_run": true
+  },
+  "settings": { "max_concurrency": 4, "timeout_seconds": 600 },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "trigger.manual",
+      "parameters": {
+        "sample_data": {
+          "keywords": "python",
+          "cv_text": "Ada Example - Backend developer, 5 years. Python (FastAPI, asyncio, pandas), PostgreSQL, Docker, AWS (Lambda, S3). Built ETL pipelines and REST APIs for a fintech startup. Some React. BSc Computer Science. Looking for remote backend or data engineering roles."
+        }
+      }
+    },
+    {
+      "id": "fetch_jobs",
+      "type": "action.http_request",
+      "parameters": {
+        "url": "https://remotive.com/api/remote-jobs",
+        "query": { "search": "{{ input.keywords }}", "limit": 10 }
+      },
+      "retry": { "max_attempts": 3, "backoff_seconds": 2 },
+      "timeout_seconds": 60
+    },
+    {
+      "id": "shortlist",
+      "type": "code.python",
+      "parameters": {
+        "arguments": { "max_jobs": 5 },
+        "code": "import html, re\n\ndef clean(text):\n    text = re.sub(r'<[^>]+>', ' ', text or '')\n    return re.sub(r'\\s+', ' ', html.unescape(text)).strip()\n\ndef main(input):\n    jobs = input['data'].get('jobs', [])\n    picked = [\n        {'title': j['title'], 'company': j.get('company_name'), 'url': j['url'],\n         'location': j.get('candidate_required_location'), 'description': clean(j.get('description'))[:1500]}\n        for j in jobs[: args['max_jobs']]\n    ]\n    print(f'kept {len(picked)} of {len(jobs)} jobs')\n    return {'jobs': picked}\n"
+      }
+    },
+    {
+      "id": "analyze",
+      "type": "ai.agent",
+      "credentials": { "default": "anthropic" },
+      "retry": { "max_attempts": 2, "backoff_seconds": 3 },
+      "timeout_seconds": 180,
+      "parameters": {
+        "provider": "anthropic",
+        "model": "claude-sonnet-5-5",
+        "system_prompt": "You are a precise technical recruiter. Score candidates against job postings honestly; do not inflate scores.",
+        "prompt": "Compare the candidate CV with each job posting. Score each job 0-100 for fit, and list concrete strengths and gaps (max 3 each). best_score is the highest score.",
+        "input_data": { "cv": "{{ nodes.start.cv_text }}", "jobs": "{{ input.jobs }}" },
+        "output_schema": {
+          "type": "object",
+          "required": ["best_score", "summary", "matches"],
+          "properties": {
+            "best_score": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "summary": { "type": "string" },
+            "matches": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["title", "company", "url", "score", "strengths", "gaps"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "company": { "type": "string" },
+                  "url": { "type": "string" },
+                  "score": { "type": "integer", "minimum": 0, "maximum": 100 },
+                  "strengths": { "type": "array", "items": { "type": "string" } },
+                  "gaps": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "good_enough",
+      "type": "logic.if",
+      "parameters": { "left": "{{ input.result.best_score }}", "operator": "greater_or_equal", "right": "{{ vars.min_score }}" }
+    },
+    {
+      "id": "compose",
+      "type": "code.python",
+      "parameters": {
+        "arguments": { "min_score": 0 },
+        "code": "def main(input):\n    r = input['result']\n    lines = [r['summary'], '']\n    for m in sorted(r['matches'], key=lambda m: -m['score']):\n        lines.append(f\"{m['score']:>3}/100  {m['title']} @ {m['company']}\")\n        lines.append(f\"         {m['url']}\")\n        if m['strengths']:\n            lines.append('         + ' + '; '.join(m['strengths']))\n        if m['gaps']:\n            lines.append('         - ' + '; '.join(m['gaps']))\n        lines.append('')\n    subject = f\"{len(r['matches'])} job matches - best fit {r['best_score']}/100\"\n    return {'subject': subject, 'body': '\\n'.join(lines)}\n"
+      }
+    },
+    {
+      "id": "send_email",
+      "type": "action.email",
+      "credentials": { "default": "smtp" },
+      "retry": { "max_attempts": 2, "backoff_seconds": 5 },
+      "parameters": {
+        "to": "{{ vars.recipient }}",
+        "subject": "{{ input.subject }}",
+        "body": "{{ input.body }}",
+        "dry_run": "{{ vars.dry_run }}"
+      }
+    },
+    {
+      "id": "no_match",
+      "type": "logic.set",
+      "parameters": { "values": { "message": "No job reached {{ vars.min_score }}/100; nothing sent." } }
+    }
+  ],
+  "connections": [
+    { "source": "start", "target": "fetch_jobs" },
+    { "source": "fetch_jobs", "target": "shortlist" },
+    { "source": "shortlist", "target": "analyze" },
+    { "source": "analyze", "target": "good_enough" },
+    { "source": "good_enough", "target": "compose", "source_output": "true" },
+    { "source": "good_enough", "target": "no_match", "source_output": "false" },
+    { "source": "compose", "target": "send_email" }
+  ]
+}

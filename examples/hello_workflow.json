@@ -1,0 +1,41 @@
+{
+  "name": "Hello candidate screening",
+  "description": "Built-in nodes only: trigger -> parallel branches -> If routing.",
+  "variables": { "threshold": 70 },
+  "nodes": [
+    {
+      "id": "start",
+      "type": "trigger.manual",
+      "parameters": { "sample_data": { "candidate": "Ada Lovelace", "score": 82 } }
+    },
+    {
+      "id": "greet",
+      "type": "logic.set",
+      "parameters": { "values": { "message": "Reviewing {{ input.candidate }}" } }
+    },
+    { "id": "pause", "type": "logic.wait", "parameters": { "seconds": 0.5 } },
+    {
+      "id": "check",
+      "type": "logic.if",
+      "parameters": { "left": "{{ nodes.start.score }}", "operator": "greater_or_equal", "right": "{{ vars.threshold }}" }
+    },
+    {
+      "id": "shortlist",
+      "type": "logic.set",
+      "parameters": { "values": { "decision": "shortlist", "who": "{{ nodes.start.candidate }}" } }
+    },
+    {
+      "id": "reject",
+      "type": "logic.set",
+      "parameters": { "values": { "decision": "reject", "who": "{{ nodes.start.candidate }}" } }
+    }
+  ],
+  "connections": [
+    { "source": "start", "target": "greet" },
+    { "source": "start", "target": "pause" },
+    { "source": "greet", "target": "check" },
+    { "source": "pause", "target": "check" },
+    { "source": "check", "target": "shortlist", "source_output": "true" },
+    { "source": "check", "target": "reject", "source_output": "false" }
+  ]
+}
