@@ -4,6 +4,7 @@
 ; User data (%LOCALAPPDATA%\AutomationEngine: workflows, credentials, history) is kept on uninstall.
 
 #define AppName "Automation Studio"
+#define AppURL "https://github.com/Agni-glitch/automation-studio"
 #ifndef AppVersion
   #define AppVersion "0.0.0"
 #endif
@@ -19,7 +20,10 @@ AppId={{8F2C6B1E-3D4A-4E5B-9C7D-1A2B3C4D5E6F}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
-AppPublisher=Automation Studio
+AppPublisher=Automation Studio contributors
+AppPublisherURL={#AppURL}
+AppSupportURL={#AppURL}/issues
+AppUpdatesURL={#AppURL}/releases
 DefaultDirName={localappdata}\Programs\AutomationStudio
 DisableProgramGroupPage=yes
 DisableDirPage=auto
@@ -44,11 +48,12 @@ SignedUninstaller=yes
 #endif
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; Flags: unchecked
+Name: "desktopicon"; Description: "Create a desktop shortcut"
 Name: "autostart"; Description: "Run in the background when I sign in (keeps active workflows listening)"; Flags: unchecked
 
 [Files]
 Source: "{#SourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [InstallDelete]
 ; a previous version's files must not mix with the new ones

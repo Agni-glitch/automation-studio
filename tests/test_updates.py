@@ -74,6 +74,7 @@ def test_manifest_source_and_validation():
 
 def test_download_verifies_sha256(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "FROZEN", True)
+    monkeypatch.setattr(paths, "installed_copy", lambda: True)
     monkeypatch.setattr(updates, "authenticode", lambda p: ("NotSigned", None))  # unsigned build
 
     m = manager(github_handler())
@@ -96,8 +97,19 @@ def test_download_verifies_sha256(tmp_path, monkeypatch):
         asyncio.run(none.download_and_verify())
 
 
+def test_portable_copy_does_not_self_install(monkeypatch):
+    monkeypatch.setattr(paths, "FROZEN", True)
+    monkeypatch.setattr(paths, "installed_copy", lambda: False)
+    m = manager(github_handler())
+    status = asyncio.run(m.check())
+    assert status["available"] and status["auto_install_blocked_reason"].startswith("portable copy")
+    with pytest.raises(UpdateError, match="portable"):
+        asyncio.run(m.download_and_verify())
+
+
 def test_signed_build_requires_same_signer(tmp_path, monkeypatch):
     monkeypatch.setattr(paths, "FROZEN", True)
+    monkeypatch.setattr(paths, "installed_copy", lambda: True)
     signer = {"current": ("Valid", "ABC123"), "download": ("Valid", "ABC123")}
     monkeypatch.setattr(updates, "authenticode",
                         lambda p: signer["download"] if p.suffix == ".part" else signer["current"])

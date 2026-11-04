@@ -38,6 +38,12 @@ def build_info() -> dict:
         return {}
 
 
+def installed_copy() -> bool:
+    """True when running from the installer's folder (it leaves its uninstaller next to the
+    exe); False for the portable zip, which in-app updates must not overwrite."""
+    return (Path(sys.executable).parent / "unins000.exe").exists()
+
+
 def _pythonw() -> str:
     python = Path(sys.executable)
     pythonw = python.with_name("pythonw.exe")

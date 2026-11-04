@@ -11,6 +11,7 @@ Steps
   4. PyInstaller -> build/output/dist/AutomationStudio/{AutomationStudio.exe, studio.exe, _internal/}
   5. copy the embeddable Python into _internal/python and smoke-test the result
   6. Inno Setup -> build/output/AutomationStudio-Setup-<version>.exe
+  7. portable zip -> build/output/AutomationStudio-<version>-portable.zip, plus SHA256SUMS.txt
 """
 
 from __future__ import annotations
@@ -173,6 +174,30 @@ def write_manifest(setup: Path, update_source: str | None, download_base: str | 
     print(f"  manifest: {OUTPUT / 'latest.json'}" + ("" if update_source else "  (no update source baked in)"))
 
 
+def portable_zip() -> Path:
+    """The program folder as a zip: unzip anywhere and run AutomationStudio.exe."""
+    step("portable zip")
+    target = OUTPUT / f"AutomationStudio-{__version__}-portable.zip"
+    target.unlink(missing_ok=True)
+    top = f"AutomationStudio-{__version__}"
+    with zipfile.ZipFile(target, "w", zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
+        for f in sorted(DIST.rglob("*")):
+            if f.is_file():
+                zf.write(f, f"{top}/{f.relative_to(DIST).as_posix()}")
+        zf.write(ROOT / "LICENSE", f"{top}/LICENSE.txt")
+    print(f"  {target} ({target.stat().st_size / 1e6:.0f} MB)")
+    return target
+
+
+def write_checksums(files: list[Path]) -> None:
+    lines = [f"{hashlib.sha256(f.read_bytes()).hexdigest()}  {f.name}" for f in files]
+    (OUTPUT / "SHA256SUMS.txt").write_text("
+".join(lines) + "
+", encoding="utf-8")
+    print("  " + "
+  ".join(lines))
+
+
 def find_iscc() -> Path | None:
     for candidate in (
         Path(os.environ.get("LOCALAPPDATA", "")) / "Programs" / "Inno Setup 6" / "ISCC.exe",
@@ -206,6 +231,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--skip-frontend", action="store_true")
     p.add_argument("--no-installer", action="store_true")
+    p.add_argument("--no-portable", action="store_true", help="skip the portable zip")
     p.add_argument("--clean", action="store_true", help="fresh npm ci and PyInstaller work dir")
     p.add_argument("--update-source", default=os.environ.get("STUDIO_UPDATE_SOURCE"),
                    help="default update source baked into the app: github:owner/repo or https://.../latest.json")
@@ -237,9 +263,16 @@ def main() -> None:
         sign_bundle()
     else:
         print("\n  (unsigned: SmartScreen will warn on other PCs; see build/sign.ps1)")
+    artifacts = []
     if not args.no_installer:
         setup = installer(sign)
         write_manifest(setup, args.update_source, args.download_base)
+        artifacts.append(setup)
+    if not args.no_portable:
+        artifacts.append(portable_zip())
+    if artifacts:
+        step("checksums")
+        write_checksums(artifacts)
     print(f"\nDone in {time.time() - started:.0f}s. Program folder: {DIST}")
 
 

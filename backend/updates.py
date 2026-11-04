@@ -118,6 +118,8 @@ class UpdateManager:
             return False, "no update available"
         if not paths.FROZEN:
             return False, "running from source: update with git and rebuild"
+        if not paths.installed_copy():
+            return False, "portable copy: download the new zip from the release page"
         if not self.latest.download_url:
             return False, "the release has no installer download"
         return True, None

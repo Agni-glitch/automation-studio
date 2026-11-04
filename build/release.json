@@ -1,4 +1,5 @@
 {
-  "releases_repo": "Agni-glitch/automation-studio-releases",
+  "releases_repo": "Agni-glitch/automation-studio",
+  "mirror_repos": ["Agni-glitch/automation-studio-releases"],
   "source_remote": "origin"
 }
