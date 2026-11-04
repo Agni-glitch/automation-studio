@@ -219,3 +219,12 @@ itself is never in the file. The [examples](../examples) folder has complete wor
 | [`hello_workflow.json`](../examples/hello_workflow.json) | parallel branches and If routing |
 | [`cv_inbox.json`](../examples/cv_inbox.json) | folder watcher → read a CV → AI summary → write a `.analysis.json` file |
 | [`job_pipeline.json`](../examples/job_pipeline.json) | fetch jobs → clean them in Python → AI match against a CV → email the shortlist |
+| [`weather_alert.json`](../examples/weather_alert.json) | interval schedule → public API (no key) → Python → If alert |
+| [`folder_sorter.json`](../examples/folder_sorter.json) | folder watcher → Python moves each file into a subfolder for its type |
+| [`retry_and_errors.json`](../examples/retry_and_errors.json) | retries with backoff, then an `error` output that routes to a fallback |
+| [`secure_webhook.json`](../examples/secure_webhook.json) | webhook with token auth that replies with text statistics |
+| [`hn_headlines.json`](../examples/hn_headlines.json) | browser automation: extract headlines and a link, take a screenshot |
+| [`notepad_desktop.json`](../examples/notepad_desktop.json) | desktop automation: open Notepad, type, paste, screenshot |
+| [`daily_digest.json`](../examples/daily_digest.json) | weekday cron → scrape headlines → local AI picks → email (dry run by default) |
+
+The [hands-on labs](labs/README.md) walk through each of these step by step.

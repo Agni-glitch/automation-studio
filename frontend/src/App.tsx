@@ -301,14 +301,29 @@ export default function App() {
     loadDefinition(blankWorkflow(), { saved: false, active: false });
   }, [loadDefinition, meta.id, meta.name, refreshWorkflows]);
 
-  const exportJson = useCallback(() => {
-    const blob = new Blob([JSON.stringify(definition(), null, 2)], { type: "application/json" });
+  const exportJson = useCallback(async () => {
+    const content = JSON.stringify(definition(), null, 2);
+    const filename = `${meta.name.replace(/[^\w-]+/g, "_") || "workflow"}.json`;
+    const desktop = window.pywebview?.api;
+    if (desktop?.save_json) {
+      // The desktop window can't download files, so it saves through a native dialog.
+      try {
+        const path = await desktop.save_json(filename, content);
+        if (path) notify("ok", `Exported to ${path}`);
+      } catch (e) {
+        notify("error", `Export failed: ${(e as Error).message ?? e}`);
+      }
+      return;
+    }
     const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${meta.name.replace(/[^\w-]+/g, "_") || "workflow"}.json`;
+    a.href = URL.createObjectURL(new Blob([content], { type: "application/json" }));
+    a.download = filename;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(a.href);
-  }, [definition, meta.name]);
+    a.remove();
+    // Revoking straight away can cancel the download before the browser reads the blob.
+    setTimeout(() => URL.revokeObjectURL(a.href), 10_000);
+  }, [definition, meta.name, notify]);
 
   const importJson = useCallback(async (file: File) => {
     try {

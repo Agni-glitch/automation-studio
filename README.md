@@ -15,6 +15,7 @@ Everything stays on your machine.
 
 **[Download for Windows](https://github.com/Agni-glitch/automation-studio/releases/latest)** ·
 [Getting started](docs/getting-started.md) ·
+[Hands-on labs](docs/labs/README.md) ·
 [Node reference](docs/nodes.md) ·
 [Contributing](CONTRIBUTING.md)
 
@@ -73,13 +74,16 @@ Prefer not to install? Download the **portable zip**, unzip it anywhere and run
    ```
 
 The [getting started guide](docs/getting-started.md) covers credentials, AI models, schedules,
-folder watching and public webhooks.
+folder watching and public webhooks. To learn by doing, work through the
+[hands-on labs](docs/labs/README.md): twelve short exercises, from your first run to an AI
+digest that emails you every morning.
 
 ## Documentation
 
 | Guide | What's in it |
 |---|---|
 | [Getting started](docs/getting-started.md) | Installing, the editor, credentials, triggers, running in the background, public webhooks, updates |
+| [Hands-on labs](docs/labs/README.md) | Twelve practical exercises that build real workflows, step by step |
 | [Nodes and workflows](docs/nodes.md) | Every node and trigger, expressions, branching, retries and errors, the workflow JSON format |
 | [Command line](docs/cli.md) | `studio` commands for running, importing and scheduling workflows from scripts |
 | [Architecture](docs/architecture.md) | How the engine, service, editor and desktop app fit together, and the security model |

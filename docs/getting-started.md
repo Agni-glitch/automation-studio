@@ -1,7 +1,8 @@
 # Getting started
 
 This guide walks through installing Automation Studio, building a workflow, and running it in
-the background. For every node's settings, see [Nodes and workflows](nodes.md).
+the background. For every node's settings, see [Nodes and workflows](nodes.md). To practise
+with real workflows, step by step, try the [hands-on labs](labs/README.md).
 
 ## Install
 

@@ -6,6 +6,16 @@ All notable changes to Automation Studio. The format follows
 
 ## [Unreleased]
 
+### Added
+- Hands-on labs in `docs/labs`: twelve step-by-step exercises, from a first run to an
+  unattended AI digest, covering every trigger and node.
+- Seven example workflows: `weather_alert`, `folder_sorter`, `retry_and_errors`,
+  `secure_webhook`, `hn_headlines`, `notepad_desktop` and `daily_digest`.
+
+### Fixed
+- **Export JSON** works in the desktop app. It opens a Save dialog instead of a browser
+  download, which the app window silently blocked.
+
 ## [0.2.2] - 2026-11-04
 
 ### Fixed

@@ -1,0 +1,27 @@
+{
+  "id": "notepad-desktop",
+  "name": "Notepad desktop automation",
+  "description": "Opens Notepad, types a note with the current run id, and takes a screenshot. Don't touch the mouse or keyboard while it runs; move the mouse into a screen corner to abort.",
+  "nodes": [
+    { "id": "start", "type": "trigger.manual", "parameters": { "sample_data": { "note": "Typed by Automation Studio" } } },
+    {
+      "id": "notepad",
+      "type": "action.desktop",
+      "timeout_seconds": 60,
+      "parameters": {
+        "pause_between_actions": 0.3,
+        "steps": [
+          { "action": "open", "target": "notepad" },
+          { "action": "wait", "seconds": 2 },
+          { "action": "type", "text": "{{ input.note }}" },
+          { "action": "press", "key": "enter" },
+          { "action": "paste", "text": "Run {{ execution.id }}" },
+          { "action": "screenshot" }
+        ]
+      }
+    }
+  ],
+  "connections": [
+    { "source": "start", "target": "notepad" }
+  ]
+}
