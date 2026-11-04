@@ -6,6 +6,18 @@ All notable changes to Automation Studio. The format follows
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-04
+
+### Fixed
+- The app no longer quits silently at launch when another window shares its title, such as a
+  File Explorer tab on a folder named "Automation Studio". Only the app's own window counts as
+  already open.
+
+### Changed
+- Editor updated to React 19, TypeScript 7 and Vite 8, with newer React Flow and CodeMirror.
+- Minimum versions raised for FastAPI, uvicorn, websockets, httpx, Playwright and PyInstaller.
+- CI uses `actions/checkout`, `actions/setup-python` and `actions/setup-node` v7.
+
 ## [0.2.1] - 2026-11-04
 
 ### Added
@@ -38,6 +50,7 @@ First release.
 - `studio` command line.
 - Per-user installer.
 
-[Unreleased]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Agni-glitch/automation-studio/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Agni-glitch/automation-studio/releases/tag/v0.2.0

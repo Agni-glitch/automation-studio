@@ -51,12 +51,19 @@ def focus_existing_window() -> bool:
     import ctypes
 
     user32 = ctypes.windll.user32
-    hwnd = user32.FindWindowW(None, TITLE)
-    if not hwnd:
-        return False
-    user32.ShowWindow(hwnd, 9)  # SW_RESTORE (also un-minimizes)
-    user32.SetForegroundWindow(hwnd)
-    return True
+    user32.FindWindowExW.restype = ctypes.c_void_p
+    user32.FindWindowExW.argtypes = [ctypes.c_void_p, ctypes.c_void_p, ctypes.c_wchar_p, ctypes.c_wchar_p]
+    hwnd = None
+    # Other windows can share the title (e.g. a File Explorer tab on a folder named
+    # "Automation Studio"), so only accept pywebview's WinForms window.
+    while hwnd := user32.FindWindowExW(None, hwnd, None, TITLE):
+        cls = ctypes.create_unicode_buffer(256)
+        user32.GetClassNameW(ctypes.c_void_p(hwnd), cls, 256)
+        if cls.value.startswith("WindowsForms10."):
+            user32.ShowWindow(ctypes.c_void_p(hwnd), 9)  # SW_RESTORE (also un-minimizes)
+            user32.SetForegroundWindow(ctypes.c_void_p(hwnd))
+            return True
+    return False
 
 
 def main() -> int:
