@@ -18,7 +18,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8"]
 # Browser automation uses the installed Microsoft Edge by default (no browser download).
-browser = ["playwright>=1.48"]
+browser = ["playwright>=1.64.1"]
 # Desktop automation; add opencv-python for fuzzy image matching (confidence < 1).
 desktop = ["pyautogui>=0.9.54", "pillow>=11"]
 # Desktop window + packaging (build_windows.bat)
