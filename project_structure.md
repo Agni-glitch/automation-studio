@@ -118,6 +118,22 @@ Browser automation in the packaged app uses the installed Edge (or Chrome). The
 `chromium` / `firefox` / `webkit` options aren't available there, because their browser
 downloads aren't bundled.
 
+### Releasing
+Source is in the private repo `Agni-glitch/automation-studio`. Installers go to the public
+repo `Agni-glitch/automation-studio-releases`, which installed apps check for updates (set in
+`build/release.json`).
+
+```
+# 1. bump __version__ in backend/__init__.py, commit, push
+# 2. publish (about 2 minutes):
+python build/release.py --notes "What changed"
+```
+The script refuses to run with uncommitted or unpushed changes, or a version that's already
+released. It builds with the update source baked in and creates release `v<version>` with the
+installer and `latest.json`. It then checks that GitHub's published SHA-256 equals the local
+file, because the updater of unsigned builds depends on it, and tags the source commit.
+`--dry-run` builds without publishing, and `--sign` requires code signing.
+
 ### Code signing
 Unsigned builds trigger SmartScreen's "Windows protected your PC" on other machines. Once you
 have a certificate, set one variable and build. Both exes, the installer and the uninstaller
