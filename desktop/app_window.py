@@ -10,6 +10,7 @@ import json
 import subprocess
 import sys
 import time
+from pathlib import Path
 
 import httpx
 
@@ -66,6 +67,34 @@ def focus_existing_window() -> bool:
     return False
 
 
+class DesktopBridge:
+    """Exposed to the page as ``window.pywebview.api``.
+
+    WebView2 in pywebview drops downloads (``ALLOW_DOWNLOADS`` is off), so the editor's
+    Export JSON can't use a browser download here. It calls ``save_json`` instead, which
+    shows a native Save dialog.
+    """
+
+    def save_json(self, filename: str, content: str) -> str | None:
+        """Ask where to save ``content``; return the chosen path, or None if cancelled."""
+        import webview
+
+        if not webview.windows:
+            return None
+        chosen = webview.windows[0].create_file_dialog(
+            webview.FileDialog.SAVE,
+            save_filename=filename,
+            file_types=("JSON files (*.json)", "All files (*.*)"),
+        )
+        if not chosen:
+            return None
+        path = Path(chosen if isinstance(chosen, str) else chosen[0])
+        if not path.suffix:
+            path = path.with_suffix(".json")
+        path.write_text(content, encoding="utf-8")
+        return str(path)
+
+
 def main() -> int:
     if focus_existing_window():
         return 0
@@ -76,7 +105,8 @@ def main() -> int:
         return 1
     import webview  # pywebview; uses the Edge WebView2 runtime built into Windows 11
 
-    webview.create_window(TITLE, url, width=1440, height=900, min_size=(960, 600), text_select=True)
+    webview.create_window(TITLE, url, width=1440, height=900, min_size=(960, 600), text_select=True,
+                          js_api=DesktopBridge())
     webview.start(private_mode=False)  # keep localStorage (UI preferences) between sessions
     return 0
 
