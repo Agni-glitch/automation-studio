@@ -191,11 +191,8 @@ def portable_zip() -> Path:
 
 def write_checksums(files: list[Path]) -> None:
     lines = [f"{hashlib.sha256(f.read_bytes()).hexdigest()}  {f.name}" for f in files]
-    (OUTPUT / "SHA256SUMS.txt").write_text("
-".join(lines) + "
-", encoding="utf-8")
-    print("  " + "
-  ".join(lines))
+    (OUTPUT / "SHA256SUMS.txt").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    print("  " + "\n  ".join(lines))
 
 
 def find_iscc() -> Path | None:
