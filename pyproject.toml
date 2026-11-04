@@ -10,7 +10,7 @@ dependencies = [
     "fastapi>=0.115",
     "uvicorn>=0.30",
     "watchdog>=5",
-    "websockets>=13",
+    "websockets>=17.4",
     "pystray>=0.19.5",
     "pillow>=11",
 ]
