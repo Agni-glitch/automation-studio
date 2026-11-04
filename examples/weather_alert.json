@@ -1,0 +1,52 @@
+{
+  "id": "weather-alert",
+  "name": "Weather alert",
+  "description": "Every 5 minutes, read the current temperature from Open-Meteo (free, no key) and raise an alert above a threshold. Change the latitude and longitude variables to your city.",
+  "variables": { "latitude": 51.51, "longitude": -0.13, "max_temp": 25 },
+  "nodes": [
+    {
+      "id": "every_5_min",
+      "type": "trigger.schedule",
+      "parameters": { "mode": "interval", "every_seconds": 300, "run_on_start": true, "sample_data": { "fired_at": "manual run" } }
+    },
+    {
+      "id": "fetch_weather",
+      "type": "action.http_request",
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "query": { "latitude": "{{ vars.latitude }}", "longitude": "{{ vars.longitude }}", "current": "temperature_2m,wind_speed_10m" }
+      },
+      "retry": { "max_attempts": 3, "backoff_seconds": 2 },
+      "timeout_seconds": 30
+    },
+    {
+      "id": "read_temp",
+      "type": "code.python",
+      "parameters": {
+        "code": "def main(input):\n    current = input['data']['current']\n    temp = current['temperature_2m']\n    log(f\"Temperature {temp} C, wind {current['wind_speed_10m']} km/h\")\n    return {'temp': temp, 'wind': current['wind_speed_10m'], 'time': current['time']}\n"
+      }
+    },
+    {
+      "id": "too_hot",
+      "type": "logic.if",
+      "parameters": { "left": "{{ input.temp }}", "operator": "greater_than", "right": "{{ vars.max_temp }}" }
+    },
+    {
+      "id": "alert",
+      "type": "logic.set",
+      "parameters": { "values": { "status": "alert", "message": "Hot: {{ nodes.read_temp.temp }} C at {{ nodes.read_temp.time }}" } }
+    },
+    {
+      "id": "all_good",
+      "type": "logic.set",
+      "parameters": { "values": { "status": "ok", "message": "{{ nodes.read_temp.temp }} C, at or below {{ vars.max_temp }} C" } }
+    }
+  ],
+  "connections": [
+    { "source": "every_5_min", "target": "fetch_weather" },
+    { "source": "fetch_weather", "target": "read_temp" },
+    { "source": "read_temp", "target": "too_hot" },
+    { "source": "too_hot", "target": "alert", "source_output": "true" },
+    { "source": "too_hot", "target": "all_good", "source_output": "false" }
+  ]
+}

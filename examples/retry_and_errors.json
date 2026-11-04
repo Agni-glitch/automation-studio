@@ -1,0 +1,32 @@
+{
+  "id": "retry-and-errors",
+  "name": "Retries and error handling",
+  "description": "Calls an address that can't resolve. The request is retried with backoff, then its error output routes to a fallback instead of failing the run. Change the url variable to a working API to see the success path.",
+  "variables": { "url": "https://api.example.invalid/status" },
+  "nodes": [
+    { "id": "start", "type": "trigger.manual" },
+    {
+      "id": "call_api",
+      "type": "action.http_request",
+      "parameters": { "url": "{{ vars.url }}", "timeout": 10 },
+      "retry": { "max_attempts": 3, "backoff_seconds": 1 },
+      "timeout_seconds": 60,
+      "on_error": "error_output"
+    },
+    {
+      "id": "success",
+      "type": "logic.set",
+      "parameters": { "values": { "outcome": "success", "status": "{{ input.status }}" } }
+    },
+    {
+      "id": "fallback",
+      "type": "logic.set",
+      "parameters": { "values": { "outcome": "fallback", "reason": "{{ input.error.message }}" } }
+    }
+  ],
+  "connections": [
+    { "source": "start", "target": "call_api" },
+    { "source": "call_api", "target": "success" },
+    { "source": "call_api", "target": "fallback", "source_output": "error" }
+  ]
+}

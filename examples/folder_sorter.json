@@ -1,0 +1,37 @@
+{
+  "id": "folder-sorter",
+  "name": "Folder sorter",
+  "description": "Files dropped into the Sort Me folder are moved into a subfolder for their type (PDFs, Images, Documents, Archives, Other). Create the folder before activating.",
+  "variables": { "folder": "%USERPROFILE%\\Documents\\Sort Me" },
+  "nodes": [
+    {
+      "id": "new_file",
+      "type": "trigger.file",
+      "parameters": {
+        "directory": "{{ vars.folder }}",
+        "patterns": ["*"],
+        "events": ["created"],
+        "settle_seconds": 2,
+        "sample_data": { "event": "created", "path": "C:\\nowhere\\example.pdf", "name": "example.pdf", "stem": "example", "extension": ".pdf", "directory": "C:\\nowhere", "size": 0 }
+      }
+    },
+    {
+      "id": "move",
+      "type": "code.python",
+      "parameters": {
+        "arguments": {
+          "groups": {
+            "PDFs": [".pdf"],
+            "Images": [".png", ".jpg", ".jpeg", ".gif", ".webp", ".bmp"],
+            "Documents": [".doc", ".docx", ".txt", ".md", ".xlsx", ".csv", ".pptx"],
+            "Archives": [".zip", ".7z", ".rar", ".tar", ".gz"]
+          }
+        },
+        "code": "import shutil\nfrom pathlib import Path\n\ndef main(input):\n    src = Path(input['path'])\n    if not src.exists():\n        log(f'{src} no longer exists, nothing to do')\n        return {'moved': False, 'reason': 'missing', 'name': input['name']}\n    ext = src.suffix.lower()\n    group = next((g for g, exts in args['groups'].items() if ext in exts), 'Other')\n    target_dir = src.parent / group\n    target_dir.mkdir(exist_ok=True)\n    target = target_dir / src.name\n    n = 1\n    while target.exists():\n        target = target_dir / f'{src.stem} ({n}){src.suffix}'\n        n += 1\n    shutil.move(str(src), str(target))\n    log(f'Moved {src.name} -> {group}')\n    return {'moved': True, 'group': group, 'to': str(target), 'name': src.name}\n"
+      }
+    }
+  ],
+  "connections": [
+    { "source": "new_file", "target": "move" }
+  ]
+}

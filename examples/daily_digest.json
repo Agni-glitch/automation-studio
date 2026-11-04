@@ -1,0 +1,82 @@
+{
+  "id": "daily-digest",
+  "name": "Daily headline digest",
+  "description": "Weekdays at 8:00: scrape Hacker News headlines, have a local Ollama model pick the ones that match your interests, and email the digest. Dry run stays on until you set the recipient, add a 'gmail' credential and set dry_run to false.",
+  "variables": {
+    "interests": "Python, automation, AI tools, Windows",
+    "recipient": "you@example.com",
+    "dry_run": true
+  },
+  "settings": { "timeout_seconds": 600 },
+  "nodes": [
+    {
+      "id": "weekday_8am",
+      "type": "trigger.schedule",
+      "parameters": { "mode": "cron", "cron": "0 8 * * 1-5", "sample_data": { "fired_at": "manual run" } }
+    },
+    {
+      "id": "scrape",
+      "type": "action.browser",
+      "timeout_seconds": 180,
+      "retry": { "max_attempts": 2, "backoff_seconds": 5 },
+      "parameters": {
+        "steps": [
+          { "action": "goto", "url": "https://news.ycombinator.com", "timeout_ms": 45000 },
+          { "action": "wait_for", "selector": ".titleline > a" },
+          { "action": "extract_all_text", "selector": ".titleline > a", "name": "titles" }
+        ]
+      }
+    },
+    {
+      "id": "summarize",
+      "type": "ai.agent",
+      "retry": { "max_attempts": 2, "backoff_seconds": 3 },
+      "parameters": {
+        "provider": "ollama",
+        "model": "llama3.2",
+        "system_prompt": "You write short, factual morning briefings. Only use the headlines you are given.",
+        "prompt": "From these headlines, pick up to 5 that match these interests: {{ vars.interests }}. For each, give the headline and one sentence on why it is worth reading.",
+        "input_data": "{{ input.data.titles }}",
+        "output_schema": {
+          "type": "object",
+          "required": ["picks"],
+          "properties": {
+            "picks": {
+              "type": "array",
+              "maxItems": 5,
+              "items": {
+                "type": "object",
+                "required": ["headline", "why"],
+                "properties": { "headline": { "type": "string" }, "why": { "type": "string" } }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "format",
+      "type": "code.python",
+      "parameters": {
+        "code": "def main(input):\n    picks = input['result']['picks']\n    lines = [f\"- {p['headline']}\\n  {p['why']}\" for p in picks] or ['Nothing matched your interests today.']\n    body = 'Your headlines for today:\\n\\n' + '\\n\\n'.join(lines)\n    log(body)\n    return {'count': len(picks), 'body': body}\n"
+      }
+    },
+    {
+      "id": "email",
+      "type": "action.email",
+      "credentials": { "default": "gmail" },
+      "parameters": {
+        "to": "{{ vars.recipient }}",
+        "subject": "Daily digest: {{ input.count }} picks",
+        "body": "{{ input.body }}",
+        "dry_run": "{{ vars.dry_run }}"
+      }
+    }
+  ],
+  "connections": [
+    { "source": "weekday_8am", "target": "scrape" },
+    { "source": "scrape", "target": "summarize" },
+    { "source": "summarize", "target": "format" },
+    { "source": "format", "target": "email" }
+  ]
+}

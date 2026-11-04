@@ -1,0 +1,36 @@
+{
+  "id": "hn-headlines",
+  "name": "Hacker News headlines",
+  "description": "Opens Hacker News in Microsoft Edge, extracts the front-page headlines and the top link, and takes a screenshot. Set headless to false on the browse node to watch it work.",
+  "nodes": [
+    { "id": "start", "type": "trigger.manual" },
+    {
+      "id": "browse",
+      "type": "action.browser",
+      "timeout_seconds": 180,
+      "retry": { "max_attempts": 2, "backoff_seconds": 5 },
+      "parameters": {
+        "browser": "msedge",
+        "headless": true,
+        "steps": [
+          { "action": "goto", "url": "https://news.ycombinator.com", "timeout_ms": 45000 },
+          { "action": "wait_for", "selector": ".titleline > a" },
+          { "action": "extract_all_text", "selector": ".titleline > a", "name": "titles" },
+          { "action": "extract_attribute", "selector": ".titleline > a", "value": "href", "name": "top_link" },
+          { "action": "screenshot" }
+        ]
+      }
+    },
+    {
+      "id": "top10",
+      "type": "code.python",
+      "parameters": {
+        "code": "def main(input):\n    titles = input['data'].get('titles', [])[:10]\n    for i, t in enumerate(titles, 1):\n        log(f'{i}. {t}')\n    return {'count': len(titles), 'headlines': titles, 'top_link': input['data'].get('top_link'), 'screenshots': input.get('screenshots', [])}\n"
+      }
+    }
+  ],
+  "connections": [
+    { "source": "start", "target": "browse" },
+    { "source": "browse", "target": "top10" }
+  ]
+}
