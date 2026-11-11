@@ -12,7 +12,7 @@ dependencies = [
     "watchdog>=5",
     "websockets>=17.4",
     "pystray>=0.19.5",
-    "pillow>=11",
+    "pillow>=13.0.0",
 ]
 
 [project.optional-dependencies]
@@ -20,7 +20,7 @@ dev = ["pytest>=8"]
 # Browser automation uses the installed Microsoft Edge by default (no browser download).
 browser = ["playwright>=1.64.1"]
 # Desktop automation; add opencv-python for fuzzy image matching (confidence < 1).
-desktop = ["pyautogui>=0.9.54", "pillow>=11"]
+desktop = ["pyautogui>=0.9.54", "pillow>=13.0.0"]
 # Desktop window + packaging (build_windows.bat)
 build = ["pywebview>=5", "pyinstaller>=6.22.3"]
 
